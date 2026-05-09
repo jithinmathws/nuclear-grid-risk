@@ -2,9 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from loguru import logger
+from sqlalchemy import text
 
 from app.core.logging import configure_logging
 from app.core.config import settings
+from app.core.database import SessionLocal
 
 configure_logging()
 
@@ -40,3 +42,16 @@ def config_test():
     return {
         "app_name": settings.app_name,
     }
+
+@app.get("/api/db-health")
+def database_health_check() -> dict[str, str]:
+    db = SessionLocal()
+
+    try:
+        db.execute(text("SELECT 1"))
+        return {
+            "status": "ok",
+            "database": "connected",
+        }
+    finally:
+        db.close()

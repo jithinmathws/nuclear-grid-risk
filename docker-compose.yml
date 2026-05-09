@@ -1,0 +1,15 @@
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: nuclear_grid_risk_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nuclear_grid_risk
+    ports:
+      - "5432:5432"
+    volumes:
+      - nuclear_grid_risk_data:/var/lib/postgresql/data
+
+volumes:
+  nuclear_grid_risk_data:
