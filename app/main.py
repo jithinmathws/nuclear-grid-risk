@@ -4,10 +4,10 @@ from fastapi import APIRouter, FastAPI
 from loguru import logger
 from sqlalchemy import text
 
+from app.api.v1.routes.assets import router as assets_router
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logging import configure_logging
-from app.api.v1.routes import router as assets_router
 
 configure_logging()
 

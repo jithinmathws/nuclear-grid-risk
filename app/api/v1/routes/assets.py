@@ -1,15 +1,19 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.core.database import get_db
 from app.models.asset import Asset
 from app.schemas.asset import AssetCreate, AssetRead, AssetUpdate
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
+DbSession = Annotated[Session, Depends(get_db)]
+
 
 @router.post("/", response_model=AssetRead, status_code=status.HTTP_201_CREATED)
-def create_asset(payload: AssetCreate, db: Session = Depends(get_db)) -> Asset:
+def create_asset(payload: AssetCreate, db: DbSession) -> Asset:
     asset = Asset(**payload.model_dump())
     db.add(asset)
     db.commit()
@@ -18,12 +22,12 @@ def create_asset(payload: AssetCreate, db: Session = Depends(get_db)) -> Asset:
 
 
 @router.get("/", response_model=list[AssetRead])
-def list_assets(db: Session = Depends(get_db)) -> list[Asset]:
+def list_assets(db: DbSession) -> list[Asset]:
     return db.query(Asset).order_by(Asset.id).all()
 
 
 @router.get("/{asset_id}", response_model=AssetRead)
-def get_asset(asset_id: int, db: Session = Depends(get_db)) -> Asset:
+def get_asset(asset_id: int, db: DbSession) -> Asset:
     asset = db.get(Asset, asset_id)
 
     if asset is None:
@@ -33,7 +37,7 @@ def get_asset(asset_id: int, db: Session = Depends(get_db)) -> Asset:
 
 
 @router.patch("/{asset_id}", response_model=AssetRead)
-def update_asset(asset_id: int, payload: AssetUpdate, db: Session = Depends(get_db)) -> Asset:
+def update_asset(asset_id: int, payload: AssetUpdate, db: DbSession) -> Asset:
     asset = db.get(Asset, asset_id)
 
     if asset is None:
@@ -50,7 +54,7 @@ def update_asset(asset_id: int, payload: AssetUpdate, db: Session = Depends(get_
 
 
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_asset(asset_id: int, db: Session = Depends(get_db)) -> None:
+def delete_asset(asset_id: int, db: DbSession) -> None:
     asset = db.get(Asset, asset_id)
 
     if asset is None:
