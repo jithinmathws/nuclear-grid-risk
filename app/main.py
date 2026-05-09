@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from app.core.logging import configure_logging
+from app.core.config import settings
 
 configure_logging()
 
@@ -32,4 +33,10 @@ def health_check() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "NuclearGridRisk API",
+    }
+
+@app.get("/api/config-test")
+def config_test():
+    return {
+        "app_name": settings.app_name,
     }
