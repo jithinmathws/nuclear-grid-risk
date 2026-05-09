@@ -4,9 +4,9 @@ from fastapi import FastAPI
 from loguru import logger
 from sqlalchemy import text
 
-from app.core.logging import configure_logging
 from app.core.config import settings
 from app.core.database import SessionLocal
+from app.core.logging import configure_logging
 
 configure_logging()
 
@@ -37,11 +37,13 @@ def health_check() -> dict[str, str]:
         "service": "NuclearGridRisk API",
     }
 
+
 @app.get("/api/config-test")
 def config_test():
     return {
         "app_name": settings.app_name,
     }
+
 
 @app.get("/api/db-health")
 def database_health_check() -> dict[str, str]:
