@@ -27,6 +27,9 @@ Thumbs.db
 htmlcov/
 .coverage
 
+# Ruff
+.ruff_cache/
+
 # Alembic
 alembic.ini
 

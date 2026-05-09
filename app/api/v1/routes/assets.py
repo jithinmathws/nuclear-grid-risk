@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -27,7 +28,7 @@ def list_assets(db: DbSession) -> list[Asset]:
 
 
 @router.get("/{asset_id}", response_model=AssetRead)
-def get_asset(asset_id: int, db: DbSession) -> Asset:
+def get_asset(asset_id: UUID, db: DbSession) -> Asset:
     asset = db.get(Asset, asset_id)
 
     if asset is None:
@@ -37,7 +38,7 @@ def get_asset(asset_id: int, db: DbSession) -> Asset:
 
 
 @router.patch("/{asset_id}", response_model=AssetRead)
-def update_asset(asset_id: int, payload: AssetUpdate, db: DbSession) -> Asset:
+def update_asset(asset_id: UUID, payload: AssetUpdate, db: DbSession) -> Asset:
     asset = db.get(Asset, asset_id)
 
     if asset is None:
@@ -54,7 +55,7 @@ def update_asset(asset_id: int, payload: AssetUpdate, db: DbSession) -> Asset:
 
 
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_asset(asset_id: int, db: DbSession) -> None:
+def delete_asset(asset_id: UUID, db: DbSession) -> None:
     asset = db.get(Asset, asset_id)
 
     if asset is None:
