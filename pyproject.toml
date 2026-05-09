@@ -1,0 +1,17 @@
+[project]
+name = "nuclear-grid-risk"
+version = "0.1.0"
+description = "PSA-inspired nuclear infrastructure risk simulation backend"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 180
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
