@@ -1,15 +1,19 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from loguru import logger
 from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logging import configure_logging
+from app.api.v1.routes import router as assets_router
 
 configure_logging()
 
+api_router = APIRouter()
+
+api_router.include_router(assets_router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,6 +31,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
