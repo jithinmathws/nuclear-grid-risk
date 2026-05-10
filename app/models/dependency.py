@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -9,6 +9,15 @@ from app.core.database import Base
 
 class Dependency(Base):
     __tablename__ = "dependencies"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_asset_id",
+            "target_asset_id",
+            "dependency_type",
+            name="uq_dependency_edge",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
