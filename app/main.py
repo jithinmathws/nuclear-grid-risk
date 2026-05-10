@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from app.api.v1.routes.assets import router as assets_router
 from app.api.v1.routes.dependencies import router as dependencies_router
+from app.api.v1.routes.graph import router as graph_router
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logging import configure_logging
@@ -16,6 +17,7 @@ api_router = APIRouter()
 
 api_router.include_router(assets_router)
 api_router.include_router(dependencies_router)
+api_router.include_router(graph_router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
