@@ -203,3 +203,24 @@ def test_get_dependency_not_found():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Dependency not found"
+
+def test_create_dependency_rejects_duplicate_dependency():
+    source_asset = create_test_asset(asset_type="nuclear_plant", criticality=5)
+    target_asset = create_test_asset(asset_type="substation", criticality=4)
+
+    payload = {
+        "source_asset_id": source_asset["id"],
+        "target_asset_id": target_asset["id"],
+        "dependency_type": "power_flow",
+        "strength": 0.85,
+        "failure_delay_minutes": 15,
+        "extra_metadata": {},
+    }
+
+    first_response = client.post("/api/v1/dependencies/", json=payload)
+    assert first_response.status_code == 201
+
+    second_response = client.post("/api/v1/dependencies/", json=payload)
+
+    assert second_response.status_code == 409
+    assert second_response.json()["detail"] == "Dependency already exists"

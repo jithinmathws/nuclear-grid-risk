@@ -34,6 +34,22 @@ def create_dependency(payload: DependencyCreate, db: DbSession) -> Dependency:
     _get_asset_or_404(payload.source_asset_id, db)
     _get_asset_or_404(payload.target_asset_id, db)
 
+    existing_dependency = (
+        db.query(Dependency)
+        .filter(
+            Dependency.source_asset_id == payload.source_asset_id,
+            Dependency.target_asset_id == payload.target_asset_id,
+            Dependency.dependency_type == payload.dependency_type,
+        )
+        .first()
+    )
+
+    if existing_dependency is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Dependency already exists",
+        )
+    
     dependency = Dependency(**payload.model_dump())
     db.add(dependency)
     db.commit()
