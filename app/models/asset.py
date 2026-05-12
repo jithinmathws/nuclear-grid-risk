@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Float, Integer, String
+from sqlalchemy import Float, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,7 +15,7 @@ class Asset(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     asset_type: Mapped[str] = mapped_column(String(50), nullable=False)
     zone: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    criticality: Mapped[int] = mapped_column(Integer, nullable=False)
+    criticality: Mapped[float] = mapped_column(Float, nullable=False)
 
     safety_class: Mapped[str | None] = mapped_column(String(50), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)

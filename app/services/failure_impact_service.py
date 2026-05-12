@@ -23,7 +23,7 @@ class FailureImpactService:
         if failed_asset_id_str not in graph:
             return []
 
-        impacted_ids: set[str] = set()
+        impact_metadata: dict[str, dict] = {}
         queue = deque([failed_asset_id_str])
 
         while queue:
@@ -35,15 +35,20 @@ class FailureImpactService:
                 if strength < propagation_threshold:
                     continue
 
-                if downstream_asset_id in impacted_ids:
+                if downstream_asset_id in impact_metadata:
                     continue
 
-                impacted_ids.add(downstream_asset_id)
+                impact_metadata[downstream_asset_id] = {
+                    "caused_by_asset_id": current_asset_id,
+                    "dependency_type": edge_data.get("dependency_type"),
+                    "propagation_strength": strength,
+                }
+
                 queue.append(downstream_asset_id)
 
         impacted_assets = []
 
-        for asset_id in impacted_ids:
+        for asset_id, metadata in impact_metadata.items():
             node_data = graph.nodes[asset_id]
 
             impacted_assets.append(
@@ -52,6 +57,9 @@ class FailureImpactService:
                     "name": node_data["name"],
                     "asset_type": node_data["asset_type"],
                     "criticality": node_data["criticality"],
+                    "caused_by_asset_id": metadata["caused_by_asset_id"],
+                    "dependency_type": metadata["dependency_type"],
+                    "propagation_strength": metadata["propagation_strength"],
                 }
             )
 

@@ -9,10 +9,13 @@ class FailureImpactRequest(BaseModel):
 
 
 class ImpactedAssetResponse(BaseModel):
-    asset_id: UUID
+    asset_id: str
     name: str
     asset_type: str
     criticality: float
+    caused_by_asset_id: str | None = None
+    dependency_type: str | None = None
+    propagation_strength: float | None = None
 
 
 class FailureImpactResponse(BaseModel):
