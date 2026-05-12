@@ -10,6 +10,9 @@ from app.api.v1.routes.graph import router as graph_router
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logging import configure_logging
+from app.api.v1.routes.failure_simulation import (
+    router as failure_simulation_router,
+)
 
 configure_logging()
 
@@ -36,6 +39,7 @@ app = FastAPI(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(failure_simulation_router, prefix="/api/v1")
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
