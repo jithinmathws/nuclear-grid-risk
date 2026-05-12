@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class FailureImpactRequest(BaseModel):
     failed_asset_id: UUID
+    propagation_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
 
 class ImpactedAssetResponse(BaseModel):

@@ -20,7 +20,10 @@ def simulate_failure_impact(
 ) -> FailureImpactResponse:
     service = FailureImpactService(db)
 
-    impacted_assets = service.get_downstream_impact(request.failed_asset_id)
+    impacted_assets = service.get_downstream_impact(
+        failed_asset_id=request.failed_asset_id,
+        propagation_threshold=request.propagation_threshold,
+    )
 
     return FailureImpactResponse(
         failed_asset_id=request.failed_asset_id,
