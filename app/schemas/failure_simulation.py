@@ -1,6 +1,12 @@
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from enum import Enum
+
+
+class FailureState(str, Enum):
+    FAILED = "failed"
+    IMPACTED = "impacted"
 
 
 class FailureImpactRequest(BaseModel):
@@ -22,3 +28,27 @@ class FailureImpactResponse(BaseModel):
     failed_asset_id: UUID
     impacted_asset_count: int
     impacted_assets: list[ImpactedAssetResponse]
+
+class TimeStepFailureRequest(BaseModel):
+    failed_asset_id: UUID
+    propagation_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    max_time_minutes: int = Field(default=60, ge=0)
+
+
+class FailureTimelineEvent(BaseModel):
+    asset_id: str
+    name: str
+    asset_type: str
+    criticality: float
+    state: FailureState
+    time_minute: int
+    caused_by_asset_id: str | None = None
+    dependency_type: str | None = None
+    propagation_strength: float | None = None
+
+
+class TimeStepFailureResponse(BaseModel):
+    failed_asset_id: UUID
+    max_time_minutes: int
+    event_count: int
+    timeline: list[FailureTimelineEvent]

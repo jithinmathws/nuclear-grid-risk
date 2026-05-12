@@ -1,4 +1,5 @@
 from collections import deque
+from heapq import heappop, heappush
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -64,3 +65,70 @@ class FailureImpactService:
             )
 
         return impacted_assets
+
+    def simulate_time_step_failure(
+        self,
+        failed_asset_id: UUID,
+        propagation_threshold: float = 0.7,
+        max_time_minutes: int = 60,
+    ) -> list[dict]:
+        graph = self.graph_builder.build()
+
+        failed_asset_id_str = str(failed_asset_id)
+
+        if failed_asset_id_str not in graph:
+            return []
+
+        visited: set[str] = set()
+        timeline: list[dict] = []
+        event_queue: list[tuple[int, str, str | None, dict | None]] = []
+
+        heappush(event_queue, (0, failed_asset_id_str, None, None))
+
+        while event_queue:
+            current_time, asset_id, caused_by_asset_id, edge_data = heappop(event_queue)
+
+            if current_time > max_time_minutes:
+                continue
+
+            if asset_id in visited:
+                continue
+
+            visited.add(asset_id)
+
+            node_data = graph.nodes[asset_id]
+
+            timeline.append(
+                {
+                    "asset_id": asset_id,
+                    "name": node_data["name"],
+                    "asset_type": node_data["asset_type"],
+                    "criticality": node_data["criticality"],
+                    "state": "failed" if caused_by_asset_id is None else "impacted",
+                    "time_minute": current_time,
+                    "caused_by_asset_id": caused_by_asset_id,
+                    "dependency_type": edge_data.get("dependency_type") if edge_data else None,
+                    "propagation_strength": edge_data.get("strength") if edge_data else None,
+                }
+            )
+
+            for _, downstream_asset_id, downstream_edge_data in graph.out_edges(asset_id, data=True):
+                strength = downstream_edge_data.get("strength", 0.0)
+
+                if strength < propagation_threshold:
+                    continue
+
+                delay = downstream_edge_data.get("failure_delay_minutes", 0) or 0
+                impacted_time = current_time + delay
+
+                heappush(
+                    event_queue,
+                    (
+                        impacted_time,
+                        downstream_asset_id,
+                        asset_id,
+                        downstream_edge_data,
+                    ),
+                )
+
+        return sorted(timeline, key=lambda event: event["time_minute"])

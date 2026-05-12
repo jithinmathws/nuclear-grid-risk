@@ -69,3 +69,53 @@ def test_failure_impact_returns_all_downstream_assets(db_session):
     assert cooling_system["caused_by_asset_id"] == str(asset_b.id)
     assert cooling_system["dependency_type"] == "power"
     assert cooling_system["propagation_strength"] == 1.0
+
+def test_time_step_failure_respects_dependency_delay(db_session):
+    asset_a = Asset(
+        name="External Grid",
+        asset_type="grid",
+        criticality=0.9,
+    )
+    asset_b = Asset(
+        name="Substation",
+        asset_type="substation",
+        criticality=0.8,
+    )
+
+    db_session.add_all([asset_a, asset_b])
+    db_session.commit()
+
+    dependency = Dependency(
+        source_asset_id=asset_a.id,
+        target_asset_id=asset_b.id,
+        dependency_type="power",
+        strength=1.0,
+        failure_delay_minutes=10,
+    )
+
+    db_session.add(dependency)
+    db_session.commit()
+
+    service = FailureImpactService(db_session)
+
+    timeline = service.simulate_time_step_failure(
+        failed_asset_id=asset_a.id,
+        propagation_threshold=0.7,
+        max_time_minutes=60,
+    )
+
+    assert len(timeline) == 2
+
+    initial_event = timeline[0]
+    impacted_event = timeline[1]
+
+    assert initial_event["asset_id"] == str(asset_a.id)
+    assert initial_event["state"] == "failed"
+    assert initial_event["time_minute"] == 0
+
+    assert impacted_event["asset_id"] == str(asset_b.id)
+    assert impacted_event["state"] == "impacted"
+    assert impacted_event["time_minute"] == 10
+    assert impacted_event["caused_by_asset_id"] == str(asset_a.id)
+    assert impacted_event["dependency_type"] == "power"
+    assert impacted_event["propagation_strength"] == 1.0
