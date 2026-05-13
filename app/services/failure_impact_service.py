@@ -88,7 +88,15 @@ class FailureImpactService:
         event_queue: list[tuple[int, str, str | None, dict | None]] = []
 
         for failed_asset_id_str in failed_asset_id_strs:
-            heappush(event_queue, (0, failed_asset_id_str, None, None))
+            heappush(
+                event_queue,
+                (
+                    0,
+                    failed_asset_id_str,
+                    None,
+                    None,
+                ),
+            )
 
         while event_queue:
             current_time, asset_id, caused_by_asset_id, edge_data = heappop(event_queue)
@@ -111,7 +119,10 @@ class FailureImpactService:
                     "criticality": node_data["criticality"],
                     "state": "failed"
                     if caused_by_asset_id is None
-                    else self._resolve_failure_state(edge_data.get("strength", 0.0)),
+                    else self._resolve_failure_state(
+                        strength=edge_data.get("strength", 0.0),
+                        redundancy_group=edge_data.get("redundancy_group"),
+                    ),
                     "time_minute": current_time,
                     "caused_by_asset_id": caused_by_asset_id,
                     "dependency_type": edge_data.get("dependency_type") if edge_data else None,
@@ -151,7 +162,14 @@ class FailureImpactService:
 
         return sorted(timeline, key=lambda event: event["time_minute"])
 
-    def _resolve_failure_state(self, strength: float) -> str:
+    def _resolve_failure_state(
+        self,
+        strength: float,
+        redundancy_group: str | None = None,
+    ) -> str:
+        if redundancy_group is not None:
+            return "isolated"
+
         if strength >= 0.85:
             return "failed"
 
