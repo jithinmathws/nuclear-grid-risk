@@ -54,4 +54,12 @@ class TimeStepFailureResponse(BaseModel):
     failed_asset_ids: list[UUID]
     max_time_minutes: int
     event_count: int
+    summary: FailureSimulationSummary
     timeline: list[FailureTimelineEvent]
+
+class FailureSimulationSummary(BaseModel):
+    failed_assets: int
+    degraded_assets: int
+    isolated_assets: int
+    total_affected_assets: int
+    max_impact_time_minute: int

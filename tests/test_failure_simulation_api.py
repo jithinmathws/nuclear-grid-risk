@@ -175,3 +175,9 @@ def test_time_step_failure_api_returns_timeline(client, db_session):
     assert events_by_asset_id[str(asset_b.id)]["caused_by_asset_id"] == str(asset_a.id)
     assert events_by_asset_id[str(asset_b.id)]["dependency_type"] == "power"
     assert events_by_asset_id[str(asset_b.id)]["propagation_strength"] == 1.0
+
+    assert data["summary"]["failed_assets"] == 2
+    assert data["summary"]["degraded_assets"] == 0
+    assert data["summary"]["isolated_assets"] == 0
+    assert data["summary"]["total_affected_assets"] == 2
+    assert data["summary"]["max_impact_time_minute"] == 10

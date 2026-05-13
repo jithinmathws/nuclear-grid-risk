@@ -59,11 +59,13 @@ def simulate_time_step_failure(
         propagation_threshold=request.propagation_threshold,
         max_time_minutes=request.max_time_minutes,
     )
+    summary = service.build_simulation_summary(timeline)
 
     return TimeStepFailureResponse(
         failed_asset_id=request.failed_asset_id,
         failed_asset_ids=failed_asset_ids,
         max_time_minutes=request.max_time_minutes,
         event_count=len(timeline),
+        summary=summary,
         timeline=timeline,
     )

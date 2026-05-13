@@ -197,3 +197,15 @@ class FailureImpactService:
                 return True
 
         return False
+
+    def build_simulation_summary(self, timeline: list[dict]) -> dict:
+        return {
+            "failed_assets": sum(1 for event in timeline if event["state"] == "failed"),
+            "degraded_assets": sum(1 for event in timeline if event["state"] == "degraded"),
+            "isolated_assets": sum(1 for event in timeline if event["state"] == "isolated"),
+            "total_affected_assets": len(timeline),
+            "max_impact_time_minute": max(
+                (event["time_minute"] for event in timeline),
+                default=0,
+            ),
+        }
