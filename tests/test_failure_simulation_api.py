@@ -181,3 +181,5 @@ def test_time_step_failure_api_returns_timeline(client, db_session):
     assert data["summary"]["isolated_assets"] == 0
     assert data["summary"]["total_affected_assets"] == 2
     assert data["summary"]["max_impact_time_minute"] == 10
+    assert data["summary"]["risk_score"] == 1.7
+    assert data["summary"]["risk_level"] == "medium"

@@ -63,3 +63,5 @@ class FailureSimulationSummary(BaseModel):
     isolated_assets: int
     total_affected_assets: int
     max_impact_time_minute: int
+    risk_score: float
+    risk_level: str

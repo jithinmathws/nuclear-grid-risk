@@ -199,6 +199,11 @@ class FailureImpactService:
         return False
 
     def build_simulation_summary(self, timeline: list[dict]) -> dict:
+        risk_score = sum(
+            event["criticality"] * self._get_state_weight(event["state"])
+            for event in timeline
+        )
+
         return {
             "failed_assets": sum(1 for event in timeline if event["state"] == "failed"),
             "degraded_assets": sum(1 for event in timeline if event["state"] == "degraded"),
@@ -208,4 +213,28 @@ class FailureImpactService:
                 (event["time_minute"] for event in timeline),
                 default=0,
             ),
+            "risk_score": round(risk_score, 2),
+            "risk_level": self._resolve_risk_level(risk_score),
         }
+
+    def _get_state_weight(self, state: str) -> float:
+        if state == "failed":
+            return 1.0
+
+        if state == "isolated":
+            return 0.8
+
+        if state == "degraded":
+            return 0.4
+
+        return 0.0
+
+
+    def _resolve_risk_level(self, risk_score: float) -> str:
+        if risk_score >= 2.6:
+            return "high"
+
+        if risk_score >= 1.1:
+            return "medium"
+
+        return "low"
