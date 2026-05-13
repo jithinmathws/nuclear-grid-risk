@@ -6,7 +6,8 @@ from enum import Enum
 
 class FailureState(str, Enum):
     FAILED = "failed"
-    IMPACTED = "impacted"
+    DEGRADED = "degraded"
+    ISOLATED = "isolated"
 
 
 class FailureImpactRequest(BaseModel):

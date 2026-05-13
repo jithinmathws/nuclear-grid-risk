@@ -114,7 +114,7 @@ def test_time_step_failure_respects_dependency_delay(db_session):
     assert initial_event["time_minute"] == 0
 
     assert impacted_event["asset_id"] == str(asset_b.id)
-    assert impacted_event["state"] == "impacted"
+    assert impacted_event["state"] == "failed"
     assert impacted_event["time_minute"] == 10
     assert impacted_event["caused_by_asset_id"] == str(asset_a.id)
     assert impacted_event["dependency_type"] == "power"
@@ -177,11 +177,11 @@ def test_time_step_failure_accumulates_dependency_delays(db_session):
     assert events_by_asset_id[str(asset_a.id)]["state"] == "failed"
 
     assert events_by_asset_id[str(asset_b.id)]["time_minute"] == 10
-    assert events_by_asset_id[str(asset_b.id)]["state"] == "impacted"
+    assert events_by_asset_id[str(asset_b.id)]["state"] == "failed"
     assert events_by_asset_id[str(asset_b.id)]["caused_by_asset_id"] == str(asset_a.id)
 
     assert events_by_asset_id[str(asset_c.id)]["time_minute"] == 30
-    assert events_by_asset_id[str(asset_c.id)]["state"] == "impacted"
+    assert events_by_asset_id[str(asset_c.id)]["state"] == "failed"
     assert events_by_asset_id[str(asset_c.id)]["caused_by_asset_id"] == str(asset_b.id)
 
 def test_time_step_failure_does_not_schedule_weak_dependency(db_session):
@@ -226,3 +226,46 @@ def test_time_step_failure_does_not_schedule_weak_dependency(db_session):
     assert str(asset_a.id) in event_asset_ids
     assert str(asset_b.id) not in event_asset_ids
     assert len(timeline) == 1
+
+def test_time_step_failure_marks_medium_strength_dependency_as_degraded(db_session):
+    asset_a = Asset(
+        name="External Grid",
+        asset_type="grid",
+        criticality=0.9,
+    )
+    asset_b = Asset(
+        name="Monitoring System",
+        asset_type="monitoring",
+        criticality=0.5,
+    )
+
+    db_session.add_all([asset_a, asset_b])
+    db_session.commit()
+
+    dependency = Dependency(
+        source_asset_id=asset_a.id,
+        target_asset_id=asset_b.id,
+        dependency_type="network",
+        strength=0.6,
+        failure_delay_minutes=5,
+    )
+
+    db_session.add(dependency)
+    db_session.commit()
+
+    service = FailureImpactService(db_session)
+
+    timeline = service.simulate_time_step_failure(
+        failed_asset_id=asset_a.id,
+        propagation_threshold=0.5,
+        max_time_minutes=60,
+    )
+
+    events_by_asset_id = {
+        event["asset_id"]: event
+        for event in timeline
+    }
+
+    assert events_by_asset_id[str(asset_a.id)]["state"] == "failed"
+    assert events_by_asset_id[str(asset_b.id)]["state"] == "degraded"
+    assert events_by_asset_id[str(asset_b.id)]["time_minute"] == 5

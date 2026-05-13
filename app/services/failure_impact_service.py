@@ -104,7 +104,9 @@ class FailureImpactService:
                     "name": node_data["name"],
                     "asset_type": node_data["asset_type"],
                     "criticality": node_data["criticality"],
-                    "state": "failed" if caused_by_asset_id is None else "impacted",
+                    "state": "failed"
+                    if caused_by_asset_id is None
+                    else self._resolve_failure_state(edge_data.get("strength", 0.0)),
                     "time_minute": current_time,
                     "caused_by_asset_id": caused_by_asset_id,
                     "dependency_type": edge_data.get("dependency_type") if edge_data else None,
@@ -132,3 +134,9 @@ class FailureImpactService:
                 )
 
         return sorted(timeline, key=lambda event: event["time_minute"])
+
+    def _resolve_failure_state(self, strength: float) -> str:
+        if strength >= 0.85:
+            return "failed"
+
+        return "degraded"
