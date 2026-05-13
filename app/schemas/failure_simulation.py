@@ -31,7 +31,8 @@ class FailureImpactResponse(BaseModel):
     impacted_assets: list[ImpactedAssetResponse]
 
 class TimeStepFailureRequest(BaseModel):
-    failed_asset_id: UUID
+    failed_asset_id: UUID | None = None
+    failed_asset_ids: list[UUID] | None = None
     propagation_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
     max_time_minutes: int = Field(default=60, ge=0)
 
@@ -49,7 +50,8 @@ class FailureTimelineEvent(BaseModel):
 
 
 class TimeStepFailureResponse(BaseModel):
-    failed_asset_id: UUID
+    failed_asset_id: UUID | None = None
+    failed_asset_ids: list[UUID]
     max_time_minutes: int
     event_count: int
     timeline: list[FailureTimelineEvent]

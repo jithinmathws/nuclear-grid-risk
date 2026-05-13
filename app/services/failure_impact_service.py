@@ -68,22 +68,27 @@ class FailureImpactService:
 
     def simulate_time_step_failure(
         self,
-        failed_asset_id: UUID,
+        failed_asset_ids: list[UUID],
         propagation_threshold: float = 0.7,
         max_time_minutes: int = 60,
     ) -> list[dict]:
         graph = self.graph_builder.build()
 
-        failed_asset_id_str = str(failed_asset_id)
+        failed_asset_id_strs = [
+            str(asset_id)
+            for asset_id in failed_asset_ids
+            if str(asset_id) in graph
+        ]
 
-        if failed_asset_id_str not in graph:
+        if not failed_asset_id_strs:
             return []
 
         visited: set[str] = set()
         timeline: list[dict] = []
         event_queue: list[tuple[int, str, str | None, dict | None]] = []
 
-        heappush(event_queue, (0, failed_asset_id_str, None, None))
+        for failed_asset_id_str in failed_asset_id_strs:
+            heappush(event_queue, (0, failed_asset_id_str, None, None))
 
         while event_queue:
             current_time, asset_id, caused_by_asset_id, edge_data = heappop(event_queue)

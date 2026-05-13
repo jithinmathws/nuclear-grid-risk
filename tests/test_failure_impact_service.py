@@ -99,7 +99,7 @@ def test_time_step_failure_respects_dependency_delay(db_session):
     service = FailureImpactService(db_session)
 
     timeline = service.simulate_time_step_failure(
-        failed_asset_id=asset_a.id,
+        failed_asset_ids=[asset_a.id],
         propagation_threshold=0.7,
         max_time_minutes=60,
     )
@@ -161,7 +161,7 @@ def test_time_step_failure_accumulates_dependency_delays(db_session):
     service = FailureImpactService(db_session)
 
     timeline = service.simulate_time_step_failure(
-        failed_asset_id=asset_a.id,
+        failed_asset_ids=[asset_a.id],
         propagation_threshold=0.7,
         max_time_minutes=60,
     )
@@ -213,7 +213,7 @@ def test_time_step_failure_does_not_schedule_weak_dependency(db_session):
     service = FailureImpactService(db_session)
 
     timeline = service.simulate_time_step_failure(
-        failed_asset_id=asset_a.id,
+        failed_asset_ids=[asset_a.id],
         propagation_threshold=0.7,
         max_time_minutes=60,
     )
@@ -256,7 +256,7 @@ def test_time_step_failure_marks_medium_strength_dependency_as_degraded(db_sessi
     service = FailureImpactService(db_session)
 
     timeline = service.simulate_time_step_failure(
-        failed_asset_id=asset_a.id,
+        failed_asset_ids=[asset_a.id],
         propagation_threshold=0.5,
         max_time_minutes=60,
     )
@@ -313,7 +313,7 @@ def test_time_step_failure_does_not_propagate_when_redundant_dependency_is_activ
     service = FailureImpactService(db_session)
 
     timeline = service.simulate_time_step_failure(
-        failed_asset_id=grid_a.id,
+        failed_asset_ids=[grid_a.id],
         propagation_threshold=0.7,
         max_time_minutes=60,
     )
@@ -326,3 +326,65 @@ def test_time_step_failure_does_not_propagate_when_redundant_dependency_is_activ
     assert str(grid_a.id) in event_asset_ids
     assert str(cooling_system.id) not in event_asset_ids
     assert len(timeline) == 1
+
+def test_time_step_failure_propagates_when_all_redundant_dependencies_fail(db_session):
+    grid_a = Asset(
+        name="Grid A",
+        asset_type="grid",
+        criticality=0.9,
+    )
+    grid_b = Asset(
+        name="Grid B",
+        asset_type="grid",
+        criticality=0.9,
+    )
+    cooling_system = Asset(
+        name="Cooling System",
+        asset_type="cooling",
+        criticality=1.0,
+    )
+
+    db_session.add_all([grid_a, grid_b, cooling_system])
+    db_session.commit()
+
+    dependency_a = Dependency(
+        source_asset_id=grid_a.id,
+        target_asset_id=cooling_system.id,
+        dependency_type="power",
+        strength=1.0,
+        failure_delay_minutes=10,
+        redundancy_group="external_power",
+    )
+    dependency_b = Dependency(
+        source_asset_id=grid_b.id,
+        target_asset_id=cooling_system.id,
+        dependency_type="power",
+        strength=1.0,
+        failure_delay_minutes=10,
+        redundancy_group="external_power",
+    )
+
+    db_session.add_all([dependency_a, dependency_b])
+    db_session.commit()
+
+    service = FailureImpactService(db_session)
+
+    timeline = service.simulate_time_step_failure(
+        failed_asset_ids=[grid_a.id, grid_b.id],
+        propagation_threshold=0.7,
+        max_time_minutes=60,
+    )
+
+    events_by_asset_id = {
+        event["asset_id"]: event
+        for event in timeline
+    }
+
+    assert str(grid_a.id) in events_by_asset_id
+    assert str(grid_b.id) in events_by_asset_id
+    assert str(cooling_system.id) in events_by_asset_id
+
+    assert events_by_asset_id[str(grid_a.id)]["time_minute"] == 0
+    assert events_by_asset_id[str(grid_b.id)]["time_minute"] == 0
+    assert events_by_asset_id[str(cooling_system.id)]["time_minute"] == 10
+    assert events_by_asset_id[str(cooling_system.id)]["state"] == "failed"
