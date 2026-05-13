@@ -120,6 +120,17 @@ class FailureImpactService:
                 if strength < propagation_threshold:
                     continue
 
+                redundancy_group = downstream_edge_data.get("redundancy_group")
+
+                if self._has_active_redundant_dependency(
+                    graph=graph,
+                    target_asset_id=downstream_asset_id,
+                    failed_upstream_asset_id=asset_id,
+                    redundancy_group=redundancy_group,
+                    affected_asset_ids=visited,
+                ):
+                    continue
+
                 delay = downstream_edge_data.get("failure_delay_minutes", 0) or 0
                 impacted_time = current_time + delay
 
@@ -140,3 +151,26 @@ class FailureImpactService:
             return "failed"
 
         return "degraded"
+
+    def _has_active_redundant_dependency(
+        self,
+        graph,
+        target_asset_id: str,
+        failed_upstream_asset_id: str,
+        redundancy_group: str | None,
+        affected_asset_ids: set[str],
+    ) -> bool:
+        if redundancy_group is None:
+            return False
+
+        for upstream_asset_id, _, edge_data in graph.in_edges(target_asset_id, data=True):
+            if upstream_asset_id == failed_upstream_asset_id:
+                continue
+
+            if edge_data.get("redundancy_group") != redundancy_group:
+                continue
+
+            if upstream_asset_id not in affected_asset_ids:
+                return True
+
+        return False

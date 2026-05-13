@@ -52,6 +52,7 @@ class InfrastructureGraphBuilder:
                 dependency_type=dependency.dependency_type,
                 strength=dependency.strength,
                 failure_delay_minutes=dependency.failure_delay_minutes,
+                redundancy_group=dependency.redundancy_group,
             )
 
         return graph
