@@ -118,3 +118,60 @@ def test_failure_impact_api_rejects_invalid_threshold(client, db_session):
     )
 
     assert response.status_code == 422
+
+def test_time_step_failure_api_returns_timeline(client, db_session):
+    asset_a = Asset(
+        name="External Grid",
+        asset_type="grid",
+        criticality=0.9,
+    )
+    asset_b = Asset(
+        name="Substation",
+        asset_type="substation",
+        criticality=0.8,
+    )
+
+    db_session.add_all([asset_a, asset_b])
+    db_session.commit()
+
+    dependency = Dependency(
+        source_asset_id=asset_a.id,
+        target_asset_id=asset_b.id,
+        dependency_type="power",
+        strength=1.0,
+        failure_delay_minutes=10,
+    )
+
+    db_session.add(dependency)
+    db_session.commit()
+
+    response = client.post(
+        "/api/v1/failure-simulation/time-step",
+        json={
+            "failed_asset_id": str(asset_a.id),
+            "propagation_threshold": 0.7,
+            "max_time_minutes": 60,
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["failed_asset_id"] == str(asset_a.id)
+    assert data["max_time_minutes"] == 60
+    assert data["event_count"] == 2
+
+    events_by_asset_id = {
+        event["asset_id"]: event
+        for event in data["timeline"]
+    }
+
+    assert events_by_asset_id[str(asset_a.id)]["state"] == "failed"
+    assert events_by_asset_id[str(asset_a.id)]["time_minute"] == 0
+
+    assert events_by_asset_id[str(asset_b.id)]["state"] == "impacted"
+    assert events_by_asset_id[str(asset_b.id)]["time_minute"] == 10
+    assert events_by_asset_id[str(asset_b.id)]["caused_by_asset_id"] == str(asset_a.id)
+    assert events_by_asset_id[str(asset_b.id)]["dependency_type"] == "power"
+    assert events_by_asset_id[str(asset_b.id)]["propagation_strength"] == 1.0
