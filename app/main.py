@@ -13,6 +13,7 @@ from app.core.logging import configure_logging
 from app.api.v1.routes.failure_simulation import (
     router as failure_simulation_router,
 )
+from app.api.v1.routes.scenarios import router as scenarios_router
 
 configure_logging()
 
@@ -21,6 +22,7 @@ api_router = APIRouter()
 api_router.include_router(assets_router)
 api_router.include_router(dependencies_router)
 api_router.include_router(graph_router)
+api_router.include_router(scenarios_router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
