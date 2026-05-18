@@ -1,3 +1,5 @@
+from uuid import UUID
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.scenario import Scenario
@@ -29,3 +31,18 @@ class ScenarioService:
 
     def list_scenarios(self) -> list[Scenario]:
         return self.db.query(Scenario).all()
+
+    def get_scenario(self, scenario_id: UUID) -> Scenario:
+        scenario = (
+            self.db.query(Scenario)
+            .filter(Scenario.id == scenario_id)
+            .first()
+        )
+
+        if scenario is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scenario not found",
+            )
+
+        return scenario
