@@ -6,6 +6,7 @@ from alembic import context
 from app.core.database import Base
 from app.models.asset import Asset  # noqa: F401
 from app.models.dependency import Dependency  # noqa: F401
+from app.models.scenario import Scenario  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
