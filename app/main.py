@@ -14,6 +14,7 @@ from app.api.v1.routes.failure_simulation import (
     router as failure_simulation_router,
 )
 from app.api.v1.routes.scenarios import router as scenarios_router
+from app.api.v1.routes.scenario_management import router as scenario_management_router
 
 configure_logging()
 
@@ -23,6 +24,7 @@ api_router.include_router(assets_router)
 api_router.include_router(dependencies_router)
 api_router.include_router(graph_router)
 api_router.include_router(scenarios_router)
+api_router.include_router(scenario_management_router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
