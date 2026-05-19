@@ -15,6 +15,7 @@ from app.api.v1.routes.failure_simulation import (
 )
 from app.api.v1.routes.scenarios import router as scenarios_router
 from app.api.v1.routes.scenario_management import router as scenario_management_router
+from app.api.v1.routes.simulation_runs import router as simulation_runs_router
 
 configure_logging()
 
@@ -44,6 +45,7 @@ app = FastAPI(
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(failure_simulation_router, prefix="/api/v1")
+app.include_router(simulation_runs_router, prefix="/api/v1")
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:

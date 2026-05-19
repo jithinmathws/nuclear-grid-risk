@@ -54,6 +54,7 @@ class ScenarioResultSummary(BaseModel):
 
 
 class ScenarioSimulationResponse(BaseModel):
+    run_id: UUID | None = None
     scenario_name: str
     scenario_type: ScenarioType
 

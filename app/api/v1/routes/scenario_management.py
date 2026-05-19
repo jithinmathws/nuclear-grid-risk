@@ -9,9 +9,14 @@ from app.schemas.scenario import (
     ScenarioCreate,
     ScenarioResponse,
 )
-from app.schemas.scenario_simulation import ScenarioSimulationResponse
+from app.schemas.scenario_simulation import (
+    ScenarioSimulationRequest,
+    ScenarioSimulationResponse,
+)
 from app.services.scenario_simulation_service import ScenarioSimulationService
 from app.services.scenario_service import ScenarioService
+from app.services.simulation_run_service import SimulationRunService
+
 
 router = APIRouter(
     prefix="/scenarios",
@@ -56,17 +61,25 @@ def simulate_saved_scenario(
 
     simulation_service = ScenarioSimulationService(db)
 
-    request = {
-        "scenario_name": scenario.name,
-        "scenario_type": scenario.scenario_type,
-        "initial_failed_asset_ids": scenario.initial_failed_asset_ids,
-        "assumptions": scenario.assumptions,
-        "propagation_threshold": scenario.propagation_threshold,
-        "max_time_minutes": scenario.max_time_minutes,
-    }
+    simulation_request = ScenarioSimulationRequest(
+        scenario_name=scenario.name,
+        scenario_type=scenario.scenario_type,
+        initial_failed_asset_ids=scenario.initial_failed_asset_ids,
+        assumptions=scenario.assumptions,
+        propagation_threshold=scenario.propagation_threshold,
+        max_time_minutes=scenario.max_time_minutes,
+    )
 
-    from app.schemas.scenario_simulation import ScenarioSimulationRequest
+    simulation_response = simulation_service.simulate_scenario(
+        simulation_request,
+    )
 
-    simulation_request = ScenarioSimulationRequest(**request)
+    run_service = SimulationRunService(db)
+    run = run_service.create_run_from_simulation(
+        scenario=scenario,
+        simulation_response=simulation_response,
+    )
 
-    return simulation_service.simulate_scenario(simulation_request)
+    simulation_response.run_id = run.id
+
+    return simulation_response
