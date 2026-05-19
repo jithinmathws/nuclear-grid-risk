@@ -92,3 +92,12 @@ def test_saved_scenario_simulation_persists_run_and_events(client, db_session):
     assert events_by_asset_id[str(asset_b.id)]["caused_by_asset_id"] == str(asset_a.id)
     assert events_by_asset_id[str(asset_b.id)]["dependency_type"] == "power"
     assert events_by_asset_id[str(asset_b.id)]["propagation_strength"] == 1.0
+
+def test_list_simulation_runs_api(client, db_session):
+    response = client.get("/api/v1/simulation-runs")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)

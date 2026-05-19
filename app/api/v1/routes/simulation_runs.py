@@ -13,6 +13,15 @@ router = APIRouter(
     tags=["Simulation Runs"],
 )
 
+@router.get(
+    "",
+    response_model=list[SimulationRunResponse],
+)
+def list_simulation_runs(
+    db: Annotated[Session, Depends(get_db)],
+) -> list[SimulationRunResponse]:
+    service = SimulationRunService(db)
+    return service.list_runs()
 
 @router.get(
     "/{run_id}",

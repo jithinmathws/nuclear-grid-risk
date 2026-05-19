@@ -69,3 +69,10 @@ class SimulationRunService:
             )
 
         return run
+
+    def list_runs(self) -> list[SimulationRun]:
+        return (
+            self.db.query(SimulationRun)
+            .order_by(SimulationRun.created_at.desc())
+            .all()
+        )
