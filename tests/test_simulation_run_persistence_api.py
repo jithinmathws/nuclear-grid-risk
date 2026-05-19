@@ -94,6 +94,56 @@ def test_saved_scenario_simulation_persists_run_and_events(client, db_session):
     assert events_by_asset_id[str(asset_b.id)]["propagation_strength"] == 1.0
 
 def test_list_simulation_runs_api(client, db_session):
+    asset_a = Asset(
+        name="External Grid",
+        asset_type="grid",
+        criticality=0.9,
+    )
+
+    asset_b = Asset(
+        name="Substation",
+        asset_type="substation",
+        criticality=0.8,
+    )
+
+    db_session.add_all([asset_a, asset_b])
+    db_session.commit()
+
+    dependency = Dependency(
+        source_asset_id=asset_a.id,
+        target_asset_id=asset_b.id,
+        dependency_type="power",
+        strength=1.0,
+        failure_delay_minutes=10,
+    )
+
+    db_session.add(dependency)
+    db_session.commit()
+
+    scenario = Scenario(
+        name="Saved External Grid Loss",
+        scenario_type="grid_failure",
+        initial_failed_asset_ids=[
+            str(asset_a.id),
+        ],
+        assumptions=[
+            "External grid unavailable.",
+        ],
+        propagation_threshold=0.7,
+        max_time_minutes=120,
+    )
+
+    db_session.add(scenario)
+    db_session.commit()
+
+    simulate_response = client.post(
+        f"/api/v1/scenarios/{scenario.id}/simulate",
+    )
+
+    assert simulate_response.status_code == 200
+
+    run_id = simulate_response.json()["run_id"]
+
     response = client.get("/api/v1/simulation-runs")
 
     assert response.status_code == 200
@@ -101,3 +151,10 @@ def test_list_simulation_runs_api(client, db_session):
     data = response.json()
 
     assert isinstance(data, list)
+
+    run_ids = [
+        run["id"]
+        for run in data
+    ]
+
+    assert run_id in run_ids
